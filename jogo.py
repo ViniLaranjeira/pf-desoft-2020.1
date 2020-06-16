@@ -545,3 +545,96 @@ knife_hit = pygame.mixer.Sound(path.join(snd_dir, 'knife_hit.wav'))
 horse_noise = pygame.mixer.Sound(path.join(snd_dir, 'horse.wav'))
 fire_sound = pygame.mixer.Sound(path.join(snd_dir, 'fire_sound.wav'))
 fireball_sound = pygame.mixer.Sound(path.join(snd_dir, 'fireball_sound.wav'))
+#loop principal
+def game_screen(screen):
+    
+    running = True
+    life = 124
+    mana = 124
+    pygame.mixer.music.load(path.join(snd_dir, 'Full of memories.ogg'))
+    pygame.mixer.music.set_volume(0)
+    pygame.mixer.music.play(loops=-1)
+    row = len(map1)
+    column = len(map1[0])
+    blocks = pygame.sprite.Group()
+    player = Player(blocks)
+    beast = Beast(blocks, player)
+    horses = pygame.sprite.Group()
+    all_sprites = pygame.sprite.Group()
+    all_sprites.add(beast)
+    all_sprites.add(player)
+    
+    for row in range(len(map1)):
+        for column in range(len(map1[row])):
+            tile_type = map1[row][column]
+            if tile_type == block:
+                tile = Tile(row, column)
+                all_sprites.add(tile)
+                blocks.add(tile)
+            
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.KEYDOWN:       
+                if event.key == pygame.K_q:
+                    running = False
+                    
+            if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_d and player.state != ATTACK and player.state != ATTACK_LEFT:
+                        player.speedx = 2
+                        player.state = WALK
+                    elif event.key == pygame.K_a and player.state != ATTACK and player.state != ATTACK_LEFT:
+                        player.speedx = -2
+                        player.state = WALK_LEFT
+                    if event.key == pygame.K_p and player.state in POS:
+                        knife_miss.stop()
+                        player.fire = True
+                        knife_miss.play()
+                    elif event.key == pygame.K_p and player.state in NEG:
+                        knife_miss.stop()
+                        player.fire = True 
+                        knife_miss.play()               
+                    if event.key == pygame.K_w:               
+                        player.jump()
+                    if event.key == pygame.K_o and len(horses) < 1:   
+                        if mana >= 50:
+                            mana -= 50
+                            horse_noise.stop()
+                            horse = Horse(blocks, player)              
+                            all_sprites.add(horse)
+                            horses.add(horse)
+                            horse_noise.play()
+                            
+            if event.type == pygame.KEYUP:
+                if event.key == pygame.K_a:
+                    player.speedx = 0                    
+                    player.state = IDLE_LEFT
+                elif event.key == pygame.K_d:
+                    player.speedx = 0                    
+                    player.state = IDLE
+
+        col = pygame.sprite.collide_mask(player, beast)
+        if col != None:
+            for c in col:
+                if player.state == ATTACK and player.frame == 2 or player.state == SLASH and player.frame == 4:
+                    beast.move = True
+                elif player.state == ATTACK and player.frame > 2 or player.state == SLASH and player.frame > 4:
+                    beast.move = False
+                    beast.attacked = False
+                print(beast.vida)
+            
+        hits = pygame.sprite.spritecollide(beast, horses, False, pygame.sprite.collide_mask)
+        for horse in hits:
+            beast.move = True
+                
+        all_sprites.update()
+        screen.fill(WHITE)
+        screen.blit(background, background_rect)
+        menu(life, mana, screen)
+        all_sprites.draw(screen)
+        pygame.display.flip()
+try:
+    game_screen(screen)        
+finally:
+    pygame.quit()
