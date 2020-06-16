@@ -85,6 +85,7 @@ class Tile(pygame.sprite.Sprite):
 
         self.rect.x = TILE_SIZE * column
         self.rect.y = TILE_SIZE * row
+
 # define a classe do jogador
 class Player(pygame.sprite.Sprite):
     def __init__(self, blocks):
@@ -288,6 +289,7 @@ class Player(pygame.sprite.Sprite):
             self.state = JUMP_LEFT
         self.speedy += GRAVITY
         self.rect.y += self.speedy
+          
 #Classe monstro
 class Beast(pygame.sprite.Sprite):
     
@@ -438,3 +440,108 @@ class Beast(pygame.sprite.Sprite):
         self.rect.x += self.speedx
         if self.vida <= 0:
             self.kill()
+
+# Define a classe cavalo
+class Horse(pygame.sprite.Sprite):
+
+    def __init__(self, blocks, player):
+        pygame.sprite.Sprite.__init__(self)
+        
+        horsesheet =    [pygame.image.load(path.join(img_dir, "horse0.png")).convert(),
+                          pygame.image.load(path.join(img_dir, "horse1.png")).convert(),
+                          pygame.image.load(path.join(img_dir, "horse2.png")).convert(),
+                          pygame.image.load(path.join(img_dir, "horse3.png")).convert(),
+                          pygame.transform.flip(pygame.image.load(path.join(img_dir, "horse0.png")).convert(), True, False),
+                          pygame.transform.flip(pygame.image.load(path.join(img_dir, "horse1.png")).convert(), True, False),
+                          pygame.transform.flip(pygame.image.load(path.join(img_dir, "horse2.png")).convert(), True, False),
+                          pygame.transform.flip(pygame.image.load(path.join(img_dir, "horse3.png")).convert(), True, False)] 
+                          
+        i = 0
+        while i < len(horsesheet):
+            horsesheet[i] = pygame.transform.scale(horsesheet[i],(288,192))
+            self.image = horsesheet[i]
+            self.image.set_colorkey(WHITE)
+            i += 1
+            
+        self.animations = {RUN_LEFT:horsesheet[0:4],RUN:horsesheet[4:8]} 
+        self.rect = self.image.get_rect()
+        
+        if player.state in POS:
+            self.state = RUN
+            self.speedx = 5
+        elif player.state in NEG:
+            self.state = RUN_LEFT
+            self.speedx = -5
+        self.animation = self.animations[self.state]
+        self.frame = 0
+        self.image = self.animation[self.frame]
+        self.rect = self.image.get_rect()
+        self.blocks = blocks
+        self.rect.bottom = player.rect.bottom
+        if self.state == RUN:
+            self.rect.centerx = 0
+        elif self.state == RUN_LEFT:
+            self.rect.centerx = WIDTH
+        self.speedy = 0
+        
+        self.last_update = pygame.time.get_ticks()
+        self.frame_ticks = 100
+        
+    def update(self):
+        now = pygame.time.get_ticks()
+        elapsed_ticks = now - self.last_update
+        if elapsed_ticks > self.frame_ticks:
+            self.last_update = now
+            self.frame += 1
+            self.animation = self.animations[self.state]
+            if self.frame >= len(self.animation):
+                self.frame = 0
+            center = self.rect.center
+            self.image = self.animation[self.frame]
+            self.mask = pygame.mask.from_surface(self.image)
+            self.rect = self.image.get_rect()
+            self.rect.center = center
+            self.mask = pygame.mask.from_surface(self.image)
+            
+        collisions = pygame.sprite.spritecollide(self, self.blocks, False)
+        for collision in collisions:
+            if self.speedy > 0:
+                self.rect.bottom = collision.rect.top
+                self.speedy = 0
+            elif self.speedy < 0:
+                self.rect.top = collision.rect.bottom
+                self.speedy = 0   
+        
+        self.speedy += GRAVITY
+        self.rect.y += self.speedy
+        self.rect.x += self.speedx
+        
+        if self.rect.left > WIDTH or self.rect.right < 0:
+            self.kill()
+            
+def menu(life, mana, screen):
+    if life > 50:
+        life_color = GREEN
+    elif life > 25:
+        life_color = YELLOW
+    else:
+        life_color = RED   
+    pygame.draw.rect(screen, life_color, (34, 30, life, 10))
+    pygame.draw.rect(screen, MANA, (34, 40, mana, 5))
+    lifebar = pygame.transform.scale(pygame.image.load(path.join(img_dir, "lifebar_back.png")).convert() ,(170,44))
+    lifebar.set_colorkey(WHITE)
+    screen.blit(lifebar, (0,10))
+    
+pygame.init()
+pygame.mixer.init()
+screen = pygame.display.set_mode((WIDTH, HEIGHT),pygame.FULLSCREEN)
+background = pygame.image.load(path.join(img_dir, 'gothic-castle-preview.png')).convert()
+background_rect = background.get_rect()
+pygame.display.set_caption("BASE")
+clock = pygame.time.Clock()
+
+knife_miss = pygame.mixer.Sound(path.join(snd_dir, 'knife_miss.wav'))
+knife_hit = pygame.mixer.Sound(path.join(snd_dir, 'knife_hit.wav'))
+horse_noise = pygame.mixer.Sound(path.join(snd_dir, 'horse.wav'))
+fire_sound = pygame.mixer.Sound(path.join(snd_dir, 'fire_sound.wav'))
+fireball_sound = pygame.mixer.Sound(path.join(snd_dir, 'fireball_sound.wav'))
