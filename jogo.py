@@ -545,6 +545,7 @@ knife_hit = pygame.mixer.Sound(path.join(snd_dir, 'knife_hit.wav'))
 horse_noise = pygame.mixer.Sound(path.join(snd_dir, 'horse.wav'))
 fire_sound = pygame.mixer.Sound(path.join(snd_dir, 'fire_sound.wav'))
 fireball_sound = pygame.mixer.Sound(path.join(snd_dir, 'fireball_sound.wav'))
+
 #loop principal
 def game_screen(screen):
     
