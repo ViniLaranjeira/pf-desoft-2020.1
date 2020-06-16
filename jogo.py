@@ -288,3 +288,153 @@ class Player(pygame.sprite.Sprite):
             self.state = JUMP_LEFT
         self.speedy += GRAVITY
         self.rect.y += self.speedy
+#Classe monstro
+class Beast(pygame.sprite.Sprite):
+    
+    def __init__(self, blocks, player):
+        
+        pygame.sprite.Sprite.__init__(self)
+        
+        beastsheet =    [pygame.image.load(path.join(img_dir, "beast_idle0.png")).convert(),
+                          pygame.image.load(path.join(img_dir, "beast_idle1.png")).convert(),
+                          pygame.image.load(path.join(img_dir, "beast_idle2.png")).convert(),
+                          pygame.image.load(path.join(img_dir, "beast_idle3.png")).convert(),
+                          pygame.image.load(path.join(img_dir, "beast_idle4.png")).convert(),
+                          pygame.image.load(path.join(img_dir, "beast_idle5.png")).convert(),
+                          pygame.transform.flip(pygame.image.load(path.join(img_dir, "beast_idle0.png")).convert(), True, False),
+                          pygame.transform.flip(pygame.image.load(path.join(img_dir, "beast_idle1.png")).convert(), True, False),
+                          pygame.transform.flip(pygame.image.load(path.join(img_dir, "beast_idle2.png")).convert(), True, False),
+                          pygame.transform.flip(pygame.image.load(path.join(img_dir, "beast_idle3.png")).convert(), True, False),
+                          pygame.transform.flip(pygame.image.load(path.join(img_dir, "beast_idle4.png")).convert(), True, False),
+                          pygame.transform.flip(pygame.image.load(path.join(img_dir, "beast_idle5.png")).convert(), True, False),
+                          pygame.image.load(path.join(img_dir, "beast_teleport0.png")).convert(),
+                          pygame.image.load(path.join(img_dir, "beast_teleport1.png")).convert(),
+                          pygame.image.load(path.join(img_dir, "beast_teleport2.png")).convert(),
+                          pygame.image.load(path.join(img_dir, "beast_teleport3.png")).convert(),
+                          pygame.image.load(path.join(img_dir, "beast_teleport4.png")).convert(),
+                          pygame.image.load(path.join(img_dir, "beast_teleport5.png")).convert(),
+                          pygame.transform.flip(pygame.image.load(path.join(img_dir, "beast_teleport0.png")).convert(), True, False),
+                          pygame.transform.flip(pygame.image.load(path.join(img_dir, "beast_teleport1.png")).convert(), True, False),
+                          pygame.transform.flip(pygame.image.load(path.join(img_dir, "beast_teleport2.png")).convert(), True, False),
+                          pygame.transform.flip(pygame.image.load(path.join(img_dir, "beast_teleport3.png")).convert(), True, False),
+                          pygame.transform.flip(pygame.image.load(path.join(img_dir, "beast_teleport4.png")).convert(), True, False),
+                          pygame.transform.flip(pygame.image.load(path.join(img_dir, "beast_teleport5.png")).convert(), True, False),
+                          pygame.image.load(path.join(img_dir, "beast_fire0.png")).convert(),
+                          pygame.image.load(path.join(img_dir, "beast_fire1.png")).convert(),
+                          pygame.image.load(path.join(img_dir, "beast_fire2.png")).convert(),
+                          pygame.image.load(path.join(img_dir, "beast_fire3.png")).convert(),
+                          pygame.transform.flip(pygame.image.load(path.join(img_dir, "beast_fire0.png")).convert(), True, False),
+                          pygame.transform.flip(pygame.image.load(path.join(img_dir, "beast_fire1.png")).convert(), True, False),
+                          pygame.transform.flip(pygame.image.load(path.join(img_dir, "beast_fire2.png")).convert(), True, False),
+                          pygame.transform.flip(pygame.image.load(path.join(img_dir, "beast_fire3.png")).convert(), True, False)] 
+                          
+        i = 0
+        while i < len(beastsheet):
+            if i < 12:
+                beastsheet[i] = pygame.transform.scale(beastsheet[i],(330,330))
+                self.image = beastsheet[i]
+                self.image.set_colorkey(WHITE)
+            elif i < 24:
+                beastsheet[i] = pygame.transform.scale(beastsheet[i],(330,700))
+                self.image = beastsheet[i]
+                self.image.set_colorkey(WHITE)
+            else:
+                beastsheet[i] = pygame.transform.scale(beastsheet[i],(400,330))
+                self.image = beastsheet[i]
+                self.image.set_colorkey(WHITE)
+            i += 1
+            
+        self.animations = {BREATH_LEFT:beastsheet[0:6],BREATH:beastsheet[6:12],
+                           TELEPORT_LEFT:beastsheet[12:18],TELEPORT:beastsheet[18:24],
+                           FIRE_LEFT:beastsheet[24:28],FIRE:beastsheet[28:32]} 
+        self.rect = self.image.get_rect()
+        
+        # Define estado 
+        self.state = BREATH_LEFT
+        self.animation = self.animations[self.state]
+        self.frame = 0
+        self.vida = 100
+        self.move = False
+        self.attacked = False
+        self.teleported = False
+        self.fire = False
+        self.image = self.animation[self.frame]
+        self.rect = self.image.get_rect()
+        self.blocks = blocks
+        self.rect.bottom = HEIGHT - 100
+        self.rect.centerx = WIDTH/2 + 300
+        self.speedy = 0
+        self.speedx = 0
+        self.last_fire = pygame.time.get_ticks()
+        self.last_teleport = pygame.time.get_ticks()
+        self.last_update = pygame.time.get_ticks()
+        self.frame_ticks = 100
+        
+    def update(self):
+        
+        now_teleport = pygame.time.get_ticks()
+        elapsed_teleport = now_teleport - self.last_teleport
+        if elapsed_teleport > random.randint(12000,18000):
+            self.last_fire = now_teleport
+            self.last_teleport = now_teleport
+            self.teleported = True
+            self.state = TELEPORT_LEFT
+            fire_sound.play()
+            
+        now_fire = pygame.time.get_ticks()
+        elapsed_fire = now_fire - self.last_fire
+        if elapsed_fire > random.randint(4000,8000):
+            self.last_fire = now_fire
+            self.fire = True
+            self.state = FIRE_LEFT
+            fireball_sound.play()
+        
+        now = pygame.time.get_ticks()
+        elapsed_ticks = now - self.last_update
+        if elapsed_ticks > self.frame_ticks:
+            self.last_update = now
+            self.frame += 1
+            self.animation = self.animations[self.state]
+            if self.frame >= len(self.animation):
+                self.frame = 0
+            center = self.rect.center
+            self.image = self.animation[self.frame]
+            self.mask = pygame.mask.from_surface(self.image)
+            self.rect = self.image.get_rect()
+            self.rect.center = center
+            self.mask = pygame.mask.from_surface(self.image)
+            
+        if self.state == TELEPORT_LEFT and self.frame == 5 and self.teleported == True:
+            self.rect.x = random.randint(0, WIDTH - 165)
+            self.state = IDLE_LEFT
+            self.teleported = False
+            
+        if self.state == FIRE_LEFT and self.frame == 3 and self.fire == True:
+            self.state = IDLE_LEFT
+            self.fire = False
+            
+        collisions = pygame.sprite.spritecollide(self, self.blocks, False)
+        for collision in collisions:
+            if self.speedy > 0:
+                self.rect.bottom = collision.rect.top
+                self.speedy = 0
+            elif self.speedy < 0:
+                self.rect.top = collision.rect.bottom
+                self.speedy = 0   
+                
+        if self.move == False:
+            self.speedx = 0
+        if self.move == True:
+            if self.attacked == False:
+                knife_miss.stop()
+                self.vida -= 10
+                knife_hit.play()
+                self.attacked = True
+                self.rect.x += 10
+                self.move = False
+                
+        self.speedy += GRAVITY
+        self.rect.y += self.speedy
+        self.rect.x += self.speedx
+        if self.vida <= 0:
+            self.kill()
